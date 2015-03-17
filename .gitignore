@@ -1,0 +1,10 @@
+*.log
+*.pyc
+*.pkl
+*.txt
+*.sql
+corpus/
+dialogs/
+data
+H_*
+nicks_*
