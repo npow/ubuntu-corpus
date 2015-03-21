@@ -39,6 +39,7 @@ def main():
     con = psycopg2.connect(database='ubuntu') if USE_DB else None
     fnames = os.listdir(DATA_DIR)
     nicks = set()
+    prev_nicks = set()
 #    fnames = ['2004-09-27-#ubuntu.txt', '2004-09-17-#ubuntu.txt', '2007-10-17-#ubuntu.txt']
     for fname in fnames:
         fname = "%s/%s" % (DATA_DIR, fname)
@@ -46,10 +47,12 @@ def main():
         date = get_date(fname)
         with open(fname, 'r') as f:
             lp = LogParser(f)
+            lp.prev_nicks = prev_nicks
             for time, what, info in lp:
                 if what == LogParser.COMMENT:
                     commit(con, date, time, info[0], info[1], info[2])
             nicks = nicks.union(lp.nicks)
+            prev_nicks = lp.nicks
     with open('nicks.txt', 'w') as f:
         for nick in nicks:
             f.write('%s\n' % nick)

@@ -53,6 +53,7 @@ class LogParser(object):
     def __init__(self, infile, dircproxy=False):
         self.infile = infile
         self.nicks = set()
+        self.prev_nicks = set()
         self.d = enchant.Dict('en_US')
         if dircproxy:
             self.NICK_REGEXP = self.DIRCPROXY_NICK_REGEXP
@@ -84,7 +85,7 @@ class LogParser(object):
         m = self.TARGET_REGEXP.match(text)
         if m is not None:
             target = m.group(1)
-            if target in self.nicks:
+            if target in self.nicks or target in self.prev_nicks:
                 if m.group(2) is not None or not self.check(target):
                     return target, m.group(3)
         return None, None
@@ -109,7 +110,7 @@ class LogParser(object):
                 text = self.decode(line[len(m.group(0)):])
                 target, rest = self.get_target(text)
                 self.nicks.add(nick)
-                yield time, self.COMMENT, (nick, target, text)
+                yield time, self.COMMENT, (nick, target, rest if rest else text)
             elif line.startswith('* ') or line.startswith('*\t'):
                 yield time, self.ACTION, self.decode(line)
             elif self.JOIN_REGEXP.match(line):
