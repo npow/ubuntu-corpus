@@ -1,14 +1,14 @@
 ##### Dependencies
 * Postgresql
 * Enchant
-* Python (pyenchant, psycopg2)
+* PyPy (pyenchant, psycopg2)
 * NodeJS (bluebird, knex, mkdirp)
 
-##### Process corpus (~10min)
+##### Process corpus (~5min)
 ```
 # ln -s /path/to/ubuntu/corpus data
 # node createTable.js
-# python main.py
+# pypy main.py
 ```
 This produces a file `ubuntu.sql`
 
