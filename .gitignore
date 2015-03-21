@@ -5,6 +5,7 @@
 *.sql
 corpus/
 dialogs/
+dialogs_old/
 data
 H_*
 nicks_*
