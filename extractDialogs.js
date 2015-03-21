@@ -10,6 +10,8 @@ var knex = require('knex')({
 var Promise = require('bluebird');
 var fs = Promise.promisifyAll(require('fs'));
 var fname = process.argv[2];
+var prefix = fname.split('.')[0] + '_';
+console.log('Prefix: ', prefix);
 var mkdirp = Promise.promisifyAll(require('mkdirp'));
 console.log('Reading: ', fname);
 
@@ -21,36 +23,33 @@ console.log(users.length);
 function extractDialog(sender, recipient) {
   return knex('messages')
     .whereRaw("(sender='"+recipient+"' AND recipient='"+sender+"') OR (sender='"+sender+"' AND recipient='"+recipient+"')")
+    .orderBy('timestamp')
     .then(function (messages) {
       return knex('messages')
-        .where('sender', 'ubottu')
-        .andWhere('id', '>', messages[0].id)
-        .andWhere('id', '<', messages[messages.length-1].id).then(function (ubottuMessages) {
-          var sortedMessages = messages.concat(ubottuMessages).sort(function (a, b) {
-            return a.timestamp < b.timestamp;
-          });
-          return knex('messages')
-            .where('id', '<', messages[0].id)
-            .andWhere('sender', recipient)
-            .andWhere('recipient', '')
-            .orderBy('id', 'desc')
-            .limit(1)
-            .then(function (startMessage) {
-              if (startMessage) {
-                messages.unshift(startMessage);
-              }
-              var length = messages.length;
-              H[length] = (H[length] || 0) + 1;
-              return mkdirp.mkdirpAsync('dialogs/' + length).then(function () {
-                var s = '';
-                messages.forEach(function (message) {
-                  s += message.timestamp.toISOString() + '\t' + message.sender + '\t' + message.recipient + '\t' + message.message + '\n';
-                });
-                return fs.writeFileAsync('dialogs/'+length+'/'+H[length]+'.tsv', s).then(function () {
-                  return messages.length;
-                });
-              });
+        .where('timestamp', '<=', messages[0].timestamp)
+        .andWhere('sender', messages[0].recipient)
+        .andWhere('recipient', '')
+        .orderBy('timestamp', 'desc')
+        .limit(10)
+        .then(function (startMessages) {
+          for (var i = 0, l = startMessages.length; i < l; ++i) {
+            if (i === 0 || (startMessages[0].timestamp - startMessages[i].timestamp) < 180000) {
+              messages.unshift(startMessages[i]);
+            } else {
+              break;
+            }
+          }
+          var length = messages.length;
+          H[length] = (H[length] || 0) + 1;
+          return mkdirp.mkdirpAsync('dialogs/' + length).then(function () {
+            var s = '';
+            messages.forEach(function (message) {
+              s += message.timestamp.toISOString() + '\t' + message.sender + '\t' + message.recipient + '\t' + message.message + '\n';
             });
+            return fs.writeFileAsync('dialogs/'+length+'/'+prefix+H[length]+'.tsv', s).then(function () {
+              return messages.length;
+            });
+          });
         });
     });
 }
@@ -70,7 +69,7 @@ function getDialogsForSender(sender, i) {
 Promise.map(users, function (sender, i) {
   if (i % 1000 === 0) console.log(i + ": " + sender);
   return getDialogsForSender(sender);
-}, { concurrency: 1 }).then(function (dialogs) {
+}, { concurrency: 4 }).then(function (dialogs) {
   var merged = [];
   knex.destroy();
   fs.writeFileSync('H_'+fname, JSON.stringify(H));
