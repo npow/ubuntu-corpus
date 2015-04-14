@@ -10,17 +10,19 @@ var knex = require('knex')({
 var Promise = require('bluebird');
 var fs = Promise.promisifyAll(require('fs'));
 var fname = process.argv[2];
-var prefix = fname.split('.')[0] + '_';
-console.log('Prefix: ', prefix);
 var mkdirp = Promise.promisifyAll(require('mkdirp'));
 console.log('Reading: ', fname);
 
+var VISITED = {};
 var H = {};
 var users = ['jetienne', 'anto9us'];
 var users = fs.readFileSync(fname).toString().split('\n');
 console.log(users.length);
 
 function extractDialog(sender, recipient) {
+  var key = [sender, recipient].sort().join('@');
+  if (VISITED[key]) return Promise.resolve();
+  VISITED[key] = true;
   return knex('messages')
     .whereRaw("(sender='"+recipient+"' AND recipient='"+sender+"') OR (sender='"+sender+"' AND recipient='"+recipient+"')")
     .orderBy('timestamp')
@@ -40,16 +42,16 @@ function extractDialog(sender, recipient) {
             }
           }
           var length = messages.length;
-          H[length] = (H[length] || 0) + 1;
-          return mkdirp.mkdirpAsync('dialogs/' + length).then(function () {
+          var id = H[length] = (H[length] || 0) + 1;
+          return mkdirp.mkdirpAsync('dialogs/' + length).then((function (id) {
             var s = '';
             messages.forEach(function (message) {
               s += message.timestamp.toISOString() + '\t' + message.sender + '\t' + message.recipient + '\t' + message.message + '\n';
             });
-            return fs.writeFileAsync('dialogs/'+length+'/'+prefix+H[length]+'.tsv', s).then(function () {
+            return fs.writeFileAsync('dialogs/'+length+'/'+id+'.tsv', s).then(function () {
               return messages.length;
             });
-          });
+          })(id));
         });
     });
 }
