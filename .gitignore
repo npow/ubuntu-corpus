@@ -1,3 +1,5 @@
+*.gz
+*.csv
 *.log
 *.pyc
 *.pkl
