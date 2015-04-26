@@ -17,7 +17,7 @@ function createIndex(column) {
 }
 
 if (createIndexes) {
-  Promise.all([['sender', 'recipient'], 'recipient', 'timestamp'].map(function (column) {
+  Promise.all([['sender', 'recipient'], 'recipient', 'timestamp', 'id'].map(function (column) {
     return createIndex(column);
   })).then(function () {
     knex.destroy();
