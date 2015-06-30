@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from irclogparser import LogParser
 import os
+import re
 
 DATA_DIR = 'data'
 USE_DB = False
@@ -10,6 +11,19 @@ if USE_DB:
 
 out = open('ubuntu.sql', 'w')
 id = 1
+
+lone = re.compile(
+    ur'''(?x)            # verbose expression (allows comments)
+    (                    # begin group
+    [\ud800-\udbff]      #   match leading surrogate
+    (?![\udc00-\udfff])  #   but only if not followed by trailing surrogate
+    )                    # end group
+    |                    #  OR
+    (                    # begin group
+    (?<![\ud800-\udbff]) #   if not preceded by leading surrogate
+    [\udc00-\udfff]      #   match trailing surrogate
+    )                    # end group
+    ''')
 
 def get_date(s):
     return s[5:15]
@@ -32,7 +46,9 @@ def commit(con, date, time, sender, recipient, message):
     else:
         dt = "%d-%d-%d %d:%d:00" % (YYYY, MM, DD, hh, mm)
         s = "%d\t%s\t%s\t%s\t%s\t" % (id, dt, sender, recipient if recipient else '', message)
-        out.write(s.encode('utf8', 'replace').replace('\\', '\\\\')+"\\N\n")
+        s = s.replace('\\', '\\\\') + "\\N\n"
+        s = lone.sub(ur'\ufffd', s).encode('utf8')
+        out.write(s)
         id += 1
 
 def main():
@@ -40,7 +56,7 @@ def main():
     fnames = os.listdir(DATA_DIR)
     nicks = set()
     prev_nicks = set()
-#    fnames = ['2004-09-27-#ubuntu.txt', '2004-09-17-#ubuntu.txt', '2007-10-17-#ubuntu.txt']
+#    fnames = ['2004-09-27-#ubuntu.txt', '2004-09-17-#ubuntu.txt', '2007-10-17-#ubuntu.txt', '2012-01-18-#ubuntu.txt']
     for fname in fnames:
         fname = "%s/%s" % (DATA_DIR, fname)
         print fname
