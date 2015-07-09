@@ -28,3 +28,8 @@ This produces a file `ubuntu.sql`
 ```
 # node createTable.js index
 ```
+
+##### Extract dialogs (~8hrs)
+```
+# node extractDialogs.js
+```
