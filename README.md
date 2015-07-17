@@ -1,3 +1,8 @@
+#### Description
+This repository contains the source code to extract the dialogs used in the following paper:
+
+*The Ubuntu Dialogue Corpus: A Large Dataset for Research in Unstructured Multi-Turn Dialogue Systems [arXiv:1506.08909](http://arxiv.org/abs/1506.08909).*
+
 ##### Dependencies
 * Postgresql
 * Enchant
