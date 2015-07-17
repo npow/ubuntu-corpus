@@ -31,5 +31,5 @@ This produces a file `ubuntu.sql`
 
 ##### Extract dialogs (~8hrs)
 ```
-# node extractDialogs.js
+# node extractDialogs.js nicks.txt
 ```
